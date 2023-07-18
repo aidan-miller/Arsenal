@@ -1,3 +1,9 @@
 the-arsenal-repository
-the-pool-of-tears
+financial-score-card-model
+evaluate-the-initial-model---training-data
+add-scores-to-initial-model-on-training-data
+reject-inference---clean-prepare-reject-data
+reject-inference---clean-prepare-reject-data-1
+add-scores-to-train-comb-from-final-model
+add-scores-to-test-comb-from-final-model
 a-caucus-race-and-a-long-tale

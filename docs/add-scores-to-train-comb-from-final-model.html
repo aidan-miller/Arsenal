@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Arsenal Repository</title>
-  <meta name="description" content="Arsenal Repository" />
+  <title>Chapter 7 Add Scores to Train Comb from Final Model | Arsenal Repository</title>
+  <meta name="description" content="Chapter 7 Add Scores to Train Comb from Final Model | Arsenal Repository" />
   <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Arsenal Repository" />
+  <meta property="og:title" content="Chapter 7 Add Scores to Train Comb from Final Model | Arsenal Repository" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Arsenal Repository" />
+  <meta name="twitter:title" content="Chapter 7 Add Scores to Train Comb from Final Model | Arsenal Repository" />
   
   
   
@@ -30,8 +30,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-
-<link rel="next" href="financial-score-card-model.html"/>
+<link rel="prev" href="reject-inference---clean-prepare-reject-data-1.html"/>
+<link rel="next" href="add-scores-to-test-comb-from-final-model.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -175,22 +175,42 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="header">
-<h1 class="title">Arsenal Repository</h1>
-<p class="author"><em>Aidan Miller</em></p>
-<p class="date"><em>2023-07-18</em></p>
-</div>
-<div id="the-arsenal-repository" class="section level1 hasAnchor" number="1">
-<h1><span class="header-section-number">Chapter 1</span> The Arsenal Repository<a href="index.html#the-arsenal-repository" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-
+<div id="add-scores-to-train-comb-from-final-model" class="section level1 hasAnchor" number="7">
+<h1><span class="header-section-number">Chapter 7</span> Add Scores to Train Comb from Final Model<a href="add-scores-to-train-comb-from-final-model.html#add-scores-to-train-comb-from-final-model" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>Our Points should almost double from our original model since we are weighting the good in the accepts as around 46 (about an aditional half of their original score) whereas in just the accepts we are weighting them as 30, we are also weighting the bads in the accepts as 1.5 also an additional half of their original score and giving just the rejects a weight of 1 this should ultimately cause the coefficients of our WoE vars to increase in our final model in comparison to our initial model resulting in almost doubling the points individuals get for each bin they fall in.</p>
+<div class="sourceCode" id="cb151"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb151-1"><a href="add-scores-to-train-comb-from-final-model.html#cb151-1" tabindex="-1"></a><span class="co"># Add Scores to Initial Model #</span></span>
+<span id="cb151-2"><a href="add-scores-to-train-comb-from-final-model.html#cb151-2" tabindex="-1"></a>pdo_f <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb151-3"><a href="add-scores-to-train-comb-from-final-model.html#cb151-3" tabindex="-1"></a>score_f <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb151-4"><a href="add-scores-to-train-comb-from-final-model.html#cb151-4" tabindex="-1"></a>odds_f <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb151-5"><a href="add-scores-to-train-comb-from-final-model.html#cb151-5" tabindex="-1"></a>fact_f <span class="ot">&lt;-</span> pdo_f<span class="sc">/</span><span class="fu">log</span>(<span class="dv">2</span>)</span>
+<span id="cb151-6"><a href="add-scores-to-train-comb-from-final-model.html#cb151-6" tabindex="-1"></a>os_f <span class="ot">&lt;-</span> score_f <span class="sc">-</span> fact_f<span class="sc">*</span><span class="fu">log</span>(odds_f)</span>
+<span id="cb151-7"><a href="add-scores-to-train-comb-from-final-model.html#cb151-7" tabindex="-1"></a>var_names_f <span class="ot">&lt;-</span> <span class="fu">names</span>(final_score<span class="sc">$</span>coefficients[<span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb151-8"><a href="add-scores-to-train-comb-from-final-model.html#cb151-8" tabindex="-1"></a></span>
+<span id="cb151-9"><a href="add-scores-to-train-comb-from-final-model.html#cb151-9" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> var_names_f) {</span>
+<span id="cb151-10"><a href="add-scores-to-train-comb-from-final-model.html#cb151-10" tabindex="-1"></a>  beta_f <span class="ot">&lt;-</span> final_score<span class="sc">$</span>coefficients[i]</span>
+<span id="cb151-11"><a href="add-scores-to-train-comb-from-final-model.html#cb151-11" tabindex="-1"></a>  beta0_f <span class="ot">&lt;-</span> final_score<span class="sc">$</span>coefficients[<span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb151-12"><a href="add-scores-to-train-comb-from-final-model.html#cb151-12" tabindex="-1"></a>  nvar_f <span class="ot">&lt;-</span> <span class="fu">length</span>(var_names_f)</span>
+<span id="cb151-13"><a href="add-scores-to-train-comb-from-final-model.html#cb151-13" tabindex="-1"></a>  WOE_var_f <span class="ot">&lt;-</span> train_comb[[i]]</span>
+<span id="cb151-14"><a href="add-scores-to-train-comb-from-final-model.html#cb151-14" tabindex="-1"></a>  points_name_f <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="fu">str_sub</span>(i, <span class="at">end =</span> <span class="sc">-</span><span class="dv">4</span>), <span class="st">&quot;points&quot;</span>, <span class="at">sep=</span><span class="st">&quot;&quot;</span>)</span>
+<span id="cb151-15"><a href="add-scores-to-train-comb-from-final-model.html#cb151-15" tabindex="-1"></a></span>
+<span id="cb151-16"><a href="add-scores-to-train-comb-from-final-model.html#cb151-16" tabindex="-1"></a>  train_comb[[points_name_f]] <span class="ot">&lt;-</span> <span class="sc">-</span>(WOE_var_f<span class="sc">*</span>(beta_f) <span class="sc">+</span> (beta0_f<span class="sc">/</span>nvar_f))<span class="sc">*</span>fact_f <span class="sc">+</span> os_f<span class="sc">/</span>nvar_f</span>
+<span id="cb151-17"><a href="add-scores-to-train-comb-from-final-model.html#cb151-17" tabindex="-1"></a>}</span>
+<span id="cb151-18"><a href="add-scores-to-train-comb-from-final-model.html#cb151-18" tabindex="-1"></a></span>
+<span id="cb151-19"><a href="add-scores-to-train-comb-from-final-model.html#cb151-19" tabindex="-1"></a></span>
+<span id="cb151-20"><a href="add-scores-to-train-comb-from-final-model.html#cb151-20" tabindex="-1"></a>colini_f <span class="ot">&lt;-</span> (<span class="fu">ncol</span>(train_comb)<span class="sc">-</span>nvar_f <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb151-21"><a href="add-scores-to-train-comb-from-final-model.html#cb151-21" tabindex="-1"></a>colend_f <span class="ot">&lt;-</span> <span class="fu">ncol</span>(train_comb)</span>
+<span id="cb151-22"><a href="add-scores-to-train-comb-from-final-model.html#cb151-22" tabindex="-1"></a>train_comb<span class="sc">$</span>Score <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(train_comb[, colini_f<span class="sc">:</span>colend_f])</span>
+<span id="cb151-23"><a href="add-scores-to-train-comb-from-final-model.html#cb151-23" tabindex="-1"></a></span>
+<span id="cb151-24"><a href="add-scores-to-train-comb-from-final-model.html#cb151-24" tabindex="-1"></a><span class="fu">hist</span>(train_comb<span class="sc">$</span>Score, <span class="at">breaks =</span> <span class="dv">50</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">350</span>,<span class="dv">700</span>), <span class="at">main =</span> <span class="st">&quot;Distribution of Train Combined Scores&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Score&quot;</span>)</span></code></pre></div>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-39-1.png" width="672" /></p>
 </div>
             </section>
 
           </div>
         </div>
       </div>
-
-<a href="financial-score-card-model.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="reject-inference---clean-prepare-reject-data-1.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="add-scores-to-test-comb-from-final-model.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -221,7 +241,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/aidan-miller/Arsenal/edit/main/index.Rmd",
+"link": "https://github.com/aidan-miller/Arsenal/edit/main/02-tears.Rmd",
 "text": "Edit"
 },
 "history": {
@@ -229,7 +249,7 @@ gitbook.start({
 "text": null
 },
 "view": {
-"link": "https://github.com/aidan-miller/Arsenal/blob/main/index.Rmd",
+"link": "https://github.com/aidan-miller/Arsenal/blob/main/02-tears.Rmd",
 "text": null
 },
 "download": null,

@@ -1,2 +1,897 @@
-# The pool of tears
+# Financial Score Card Model
+
+
+Loading in Packages
+```{r warning=F, message=FALSE, include=FALSE}
+
+library(gmodels)
+library(vcd)
+library(smbinning)
+library(dplyr)
+library(stringr)
+library(shades)
+library(latticeExtra)
+library(plotly)
+library(tidyverse)
+```
+
+
+Reading in Data
+```{r warning=F, message=FALSE, include=FALSE}
+#read.csv doesnt read it in as a tibble
+library(readr)
+accepted_customers <- read_csv("data/accepted_customers.csv")
+accepted=as.data.frame(accepted_customers) #read_csv reads it in as a tibble so need to change it to a DF for IV sum to work
+#accepted_customers <- read.csv("~/Desktop/Financial/Homework1_FA/accepted_customers.csv")
+rejected_customers <- read_csv("data/rejected_customers.csv")
+rejected=as.data.frame(rejected_customers)
+```
+
+
+Preview Data
+```{r}
+head(accepted)
+head(rejected)
+```
+
+
+Looking at Accepts Data Closer
+```{r}
+#GB is our target var 0 is good and 1 is bad
+str(accepted)
+```
+
+
+Removing Vars That should not be taken into consideration when dealing with loans 
+```{r}
+accepts= accepted %>% 
+  select(-AGE, -DIV, -NAT) %>%
+  mutate(good= ifelse(GB==0, 1, 0),
+         PERS_H= ifelse(PERS_H>=7, '7+', PERS_H),
+         CARDS= ifelse(CARDS=='VISA mybank', 'Other credit car', CARDS),
+         CARDS= ifelse(CARDS=='VISA Others', 'Other credit car', CARDS),
+         CARDS= ifelse(CARDS=='American Express', 'Other credit car', CARDS),
+         GB=ifelse(GB=="0",0,1))
+```
+
+
+```{r}
+accepts %>% summarise_all(n_distinct)
+```
+
+Getting all the Factor Variables from the accepts dataset
+```{r}
+factor_vars=NULL
+for (i in (1:ncol(accepts))){
+  if (colnames(accepts)[i] == 'good'){
+    next
+  }
+  if (length(unique(accepts[,i]))<15){
+    factor_vars=append(factor_vars,colnames(accepts[i]))
+  }
+}
+
+factor_vars
+accepts[,factor_vars] = lapply(accepts[,factor_vars] , factor)
+#str(accepts)
+
+#      OR        #
+
+#for (i in (1:ncol(accepts))){
+  #if (colnames(accepts)[i] == 'good'){
+    #break
+  #}
+  #if (length(unique(accepts[,i]))<15){
+    #accepts[,i]=as.factor(accepts[,i])
+  #}
+#}
+```
+
+```{r}
+accepts$good= as.numeric(accepts$good)
+table(accepted$GB)
+```
+
+Creating Train Test Population
+```{r}
+set.seed(0119)
+train_id <- sample(seq_len(nrow(accepts)), size = floor(0.70*nrow(accepts)))
+train <- accepts[train_id, ]
+test <- accepts[-train_id, ]
+
+table(train$good)
+table(test$good)
+```
+
+
+
+*******************************************************************
+*******************************************************************
+Selecting + Binning Just the Important Vars
+```{r}
+#Selecting only important vars
+iv_summary <- smbinning.sumiv(df = train, y = "good")
+iv_summary= na.omit(iv_summary)
+smbinning.sumiv.plot(iv_summary)
+iv_summary
+
+imp_vars=NULL
+for (i in 1:length(iv_summary$Char)){
+  if (iv_summary$IV[i]>=.10){
+    imp_vars=append(imp_vars, iv_summary$Char[i])
+  }
+}
+
+#just using train 0 to just get the important vars names  
+train0=train[,c(imp_vars)]
+
+#Binning Just the Important Vars
+
+num_names0 = names(train0)[sapply(train0, is.numeric)] # Gathering the names of numeric variables in data #
+num_names0=num_names0[num_names0 != "good"]
+
+results_all_sig_num = list() # Creating empty list to store all results #
+results_all_sig_char = list()
+#iv_summary <- smbinning.sumiv(df = train0, y = "good")
+#iv_summary= na.omit(iv_summary)
+
+for(i in 1:length(num_names0)){
+  results_all_sig_num[[num_names0[i]]] <- smbinning(df = train, y = "good", x = num_names0[i])
+}
+
+char_names0 =names(train0)[sapply(train0, is.factor)]
+char_names0=char_names0[char_names0 != "GB"]
+char_names0=char_names0[char_names0 != "_freq_"]
+
+for(i in 1:length(char_names0)){
+  results_all_sig_char[[char_names0[i]]] <- smbinning.factor(df = train, y = "good", x = char_names0[i])
+}
+
+
+```
+*******************************************************************
+*******************************************************************
+
+
+
+```{r include=F}
+# Selecting + Binning Just the Important Vars
+# ALL IN ONE LOOP (DOES THE SAME AS THE CODE ABOVE) 
+# **NEED TO FIX
+
+# iv_summary=smbinning.sumiv(df = train, y = "good")
+# iv_summary= na.omit(iv_summary)
+# variables=vector()
+# results_all_sig=list()
+# catvariables=vector()
+# for (i in 1:length(iv_summary$Char)){
+#   if (iv_summary$IV[i]>=.10 & !is.factor(train[,iv_summary$Char[i]])){
+#     variables=append(variables, iv_summary$Char[i])
+#      results_all_sig[[iv_summary$Char[i]]]=smbinning(train, y='good', x= iv_summary$Char[i])
+#   }
+#   else{
+#     if(iv_summary$IV[i]>=.10 & is.factor(train[,iv_summary$Char[i]])){
+#     results_all_sig[[iv_summary$Char[i]]]=smbinning.factor(train, y='good', x= iv_summary$Char[i])
+#     variables=append(variables, iv_summary$Char[i])
+#     catvariables= append(catvariables, iv_summary$Char[i])
+#   }
+#     
+#   }
+# }
+
+```
+
+
+Generating Variables of Bins and WOE Values 
+```{r}
+# Generating Variables of Bins #
+for(i in 1:length(results_all_sig_num)) {
+  train <- smbinning.gen(df = train, ivout = results_all_sig_num[[i]], chrname = paste(results_all_sig_num[[i]]$x, "_bin", sep = ""))
+}
+
+
+for(i in 1:length(results_all_sig_char)) {
+  train <- smbinning.factor.gen(df = train, ivout = results_all_sig_char[[i]], chrname = paste(results_all_sig_char[[i]]$x, "_bin", sep = ""))
+}
+
+# Generating Variables WOE Values from Bins just created #
+
+results_all_sig=append(results_all_sig_num,results_all_sig_char)
+
+
+for (j in 1:length(results_all_sig)) {
+  for (i in 1:nrow(train)) {
+    bin_name <- paste(results_all_sig[[j]]$x, "_bin", sep = "")
+    bin <- substr(train[[bin_name]][i], 2, 2)
+
+    woe_name <- paste(results_all_sig[[j]]$x, "_WOE", sep = "")
+    
+    if(bin == 0) {
+      bin <- dim(results_all_sig[[j]]$ivtable)[1] - 1
+      train[[woe_name]][i] <- results_all_sig[[j]]$ivtable[bin, "WoE"]
+    } else {
+      train[[woe_name]][i] <- results_all_sig[[j]]$ivtable[bin, "WoE"]
+    }
+  }
+}
+
+
+```
+
+Finding Out Which Vars Had Quasi Complete and then Making Sure None has INF in IV WOE
+```{r}
+
+CrossTable(train$PERS_H, train$good)
+
+results_all_sig[["PERS_H"]][["ivtable"]]
+```
+
+
+
+Building Initial Scorecard Model
+```{r}
+#need to fix gb var in test
+test$GB=ifelse(test$GB=="0",0,1)
+train$GB=ifelse(train$GB=="0",0,1)
+initial_score <- glm(GB ~ 
+                       TMJOB1_WOE + 
+                       INCOME_WOE +
+                       CARDS_WOE + #quasi complete seperation issue with this var
+                       PERS_H_WOE, #quasi complete seperation issue with this var
+                       #EC_CARD_WOE, dogwater predictor
+                     data = train,
+                     weights = as.numeric(train$`_freq_`), 
+                     family = "binomial")
+
+summary(initial_score)
+```
+
+# Evaluate the Initial Model - Training Data #
+```{r}
+train$pred <- initial_score$fitted.values
+
+smbinning.metrics(dataset = train, prediction = "pred", actualclass = "GB", report = 1)
+smbinning.metrics(dataset = train, prediction = "pred", actualclass = "GB", report = 0, plot = "ks")
+smbinning.metrics(dataset = train, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
+```
+
+Fixing PERS_H Var
+```{r}
+#test PERS_H is missing an 8+ Category so we are gonna combine 7 and 8+
+#test PERS_H is missing an 8+ Category
+table(test$PERS_H)
+table(train$PERS_H)
+```
+
+
+Check Model on the Testing Data
+```{r}
+for(i in 1:length(results_all_sig_num)) {
+  test <- smbinning.gen(df = test, ivout = results_all_sig_num[[i]], chrname = paste(results_all_sig_num[[i]]$x, "_bin", sep = ""))
+}
+
+
+for(i in 1:length(results_all_sig_char)) {
+  test <- smbinning.factor.gen(df = test, ivout = results_all_sig_char[[i]], chrname = paste(results_all_sig_char[[i]]$x, "_bin", sep = ""))
+}
+
+
+for (j in 1:length(results_all_sig)) {
+  for (i in 1:nrow(test)) {
+    bin_name <- paste(results_all_sig[[j]]$x, "_bin", sep = "")
+    bin <- substr(test[[bin_name]][i], 2, 2)
+    
+    woe_name <- paste(results_all_sig[[j]]$x, "_WOE", sep = "")
+    
+    if(bin == 0) {
+      bin <- dim(results_all_sig[[j]]$ivtable)[1] - 1
+      test[[woe_name]][i] <- results_all_sig[[j]]$ivtable[bin, "WoE"]
+    } else {
+      test[[woe_name]][i] <- results_all_sig[[j]]$ivtable[bin, "WoE"]
+    }
+  }
+}
+
+test$pred <- predict(initial_score, newdata=test, type='response')
+
+smbinning.metrics(dataset = test, prediction = "pred", actualclass = "GB", report = 1)
+smbinning.metrics(dataset = test, prediction = "pred", actualclass = "GB", report = 0, plot = "ks")
+smbinning.metrics(dataset = test, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
+```
+
+# Add Scores to Initial Model on Training Data #
+```{r}
+# Add Scores to Initial Model #
+pdo <- 50
+score <- 500
+odds <- 20
+fact <- pdo/log(2)
+os <- score - fact*log(odds)
+var_names <- names(initial_score$coefficients[-1])
+
+for(i in var_names) {
+  beta <- initial_score$coefficients[i]
+  beta0 <- initial_score$coefficients["(Intercept)"]
+  nvar <- length(var_names)
+  WOE_var <- train[[i]]
+  points_name <- paste(str_sub(i, end = -4), "points", sep="")
+
+  train[[points_name]] <- -(WOE_var*(beta) + (beta0/nvar))*fact + os/nvar
+}
+
+
+colini <- (ncol(train)-nvar + 1)
+colend <- ncol(train)
+train$Score <- rowSums(train[, colini:colend])
+
+hist(train$Score, breaks = 50, xlim = c(250,500), main = "Distribution of Train Scores", xlab = "Score")
+```
+
+Scoring for the Test Data Set
+```{r}
+for(i in var_names) {
+  beta <- initial_score$coefficients[i]
+  beta0 <- initial_score$coefficients["(Intercept)"]
+  nvar <- length(var_names)
+  WOE_var <- test[[i]]
+  points_name <- paste(str_sub(i, end = -4), "points", sep="")
+  
+  test[[points_name]] <- -(WOE_var*(beta) + (beta0/nvar))*fact + os/nvar
+}
+
+colini <- (ncol(test)-nvar + 1)
+colend <- ncol(test)
+test$Score <- rowSums(test[, colini:colend])
+
+hist(test$Score, breaks = 30, xlim = c(250,480), main = "Distribution of Test Scores", xlab = "Score")
+```
+
+combining training and testing data back together
+```{r}
+accepts_scored <- rbind(train, test)
+hist(accepts_scored$Score, breaks = 30, main = "Distribution of Scores", xlab = "Score")
+```
+
+
+# Reject Inference - Clean & Prepare Reject Data #
+```{r}
+#need to make sure our levels match the accepts data exactly or we wont be able to bin properly 
+rejects= rejected %>% 
+  select(-AGE, -DIV, -NAT) %>%
+  mutate(PERS_H= ifelse(PERS_H>=7, '7+', PERS_H),
+         CARDS= ifelse(CARDS=='VISA mybank', 'Other credit car', CARDS),
+         CARDS= ifelse(CARDS=='VISA Others', 'Other credit car', CARDS),
+         CARDS= ifelse(CARDS=='American Express', 'Other credit car', CARDS),
+         CARDS= ifelse(CARDS=='VISA Citibank', 'Other credit car', CARDS)) #citibank in rejects and not accepts and need to get it to match
+
+
+
+for (i in (1:ncol(rejects))){
+#if (colnames(accepts)[i] == 'good'){
+#next
+#}
+if (length(unique(rejects[,i]))<15){
+rejects[,i]=as.factor(rejects[,i])
+}
+}
+
+#str(rejects)
+#str(accepts)
+```
+
+
+# Reject Inference - Clean & Prepare Reject Data #
+```{r}
+#altering the bands for each binning set in the results list in case there are any additional lower points or higher points in the rejects data
+#this is mostly for the numeric values 
+
+#making sure bands change in our results_all_sig_char for accepts and rejects combined
+#this shouldnt cause any issues in the binner and WoE creating as long as there are the same type of unique levels
+#this will not run since these are categorical variables so no need to set band
+# for(i in names(results_all_sig_char)) {
+#   results_all_sig_char[[i]]$bands[1] <- min(c(accepts[[i]], rejects[[i]]), na.rm = TRUE)
+#   results_all_sig_char[[i]]$bands[length(results_all_sig_char[[i]]$bands)] <- max(c(accepts[[i]], rejects[[i]]), na.rm = TRUE)
+# }
+
+
+#making sure bands change in our results_all_sig_num for accepts and rejects combined
+for(i in names(results_all_sig_num)) {
+  results_all_sig_num[[i]]$bands[1] <- min(c(accepts[[i]], rejects[[i]]), na.rm = TRUE)
+  results_all_sig_num[[i]]$bands[length(results_all_sig_num[[i]]$bands)] <- max(c(accepts[[i]], rejects[[i]]), na.rm = TRUE)
+}
+
+#Getting the bins of the variables in the results_all_sig numeric 
+rejects_scored <- rejects
+for(i in 1:length(results_all_sig_num)) {
+  rejects_scored <- smbinning.gen(df = rejects_scored, ivout = results_all_sig_num[[i]], 
+                                  chrname = paste(results_all_sig_num[[i]]$x, "_bin", sep = ""))
+}
+
+for(i in 1:length(results_all_sig_char)) {
+  rejects_scored <- smbinning.factor.gen(df = rejects_scored, ivout = results_all_sig_char[[i]], 
+                                         chrname = paste(results_all_sig_char[[i]]$x, "_bin", sep = ""))
+}
+
+results_all_sig_AR=append(results_all_sig_num,results_all_sig_char)
+```
+
+
+Getting the WoE values for our Rejects Bins we Just Created
+  -This wont work if the levels of the categories are not the same across the rejects and accepts data for the significant categorical vars in     the results list
+  -This also wont work if our bands for the numeric sig vars are not altered to account for both the accepts and the rejects
+```{r}
+for (j in 1:length(results_all_sig_AR)) {
+  for (i in 1:nrow(rejects_scored)) {
+    bin_name <- paste(results_all_sig_AR[[j]]$x, "_bin", sep = "")
+    bin <- substr(rejects_scored[[bin_name]][i], 2, 2)
+    
+    woe_name <- paste(results_all_sig_AR[[j]]$x, "_WOE", sep = "")
+    
+    if(bin == 0) {
+      bin <- dim(results_all_sig_AR[[j]]$ivtable)[1] - 1
+      rejects_scored[[woe_name]][i] <- results_all_sig_AR[[j]]$ivtable[bin, "WoE"]
+    } else {
+      rejects_scored[[woe_name]][i] <- results_all_sig_AR[[j]]$ivtable[bin, "WoE"]
+    }
+  }
+}
+
+head(rejects_scored)
+```
+
+#getting the scores for rejects data from our initial model we made
+```{r}
+pdo <- 50
+score <- 500
+odds <- 20
+fact <- pdo/log(2)
+os <- score - fact*log(odds)
+var_names <- names(initial_score$coefficients[-1])
+
+for(i in var_names) {
+  beta <- initial_score$coefficients[i]
+  beta0 <- initial_score$coefficients["(Intercept)"]
+  nvar <- length(var_names)
+  WOE_var <- rejects_scored[[i]]
+  points_name <- paste(str_sub(i, end = -4), "points", sep="")
+  
+  rejects_scored[[points_name]] <- -(WOE_var*(beta) + (beta0/nvar))*fact + os/nvar
+}
+
+colini <- (ncol(rejects_scored)-nvar + 1)
+colend <- ncol(rejects_scored)
+rejects_scored$Score <- rowSums(rejects_scored[, colini:colend])
+```
+
+
+
+Parceling our Rejects Data to get our GB variable
+```{r}
+parc <- seq(200, 500, 25)
+
+accepts_scored$Score_parc <- cut(accepts_scored$Score, breaks = parc)
+rejects_scored$Score_parc <- cut(rejects_scored$Score, breaks = parc)
+
+table(accepts_scored$Score_parc, accepts_scored$GB)
+
+parc_perc <- table(accepts_scored$Score_parc, accepts_scored$GB)[,2]/rowSums(table(accepts_scored$Score_parc, accepts_scored$GB))
+
+rejects$GB <- 0
+
+rej_bump <- 1.25
+
+for(i in 1:(length(parc)-1)) {
+  for(j in 1:length(rejects_scored$Score)) {
+    if((rejects_scored$Score[j] > parc[i]) & 
+       (rejects_scored$Score[j] <= parc[i+1]) & 
+       (runif(n = 1, min = 0, max = 1) < (rej_bump*parc_perc[i]))) {
+      rejects$GB[j] <- 1
+    }
+  }
+}
+
+table(rejects_scored$Score_parc, rejects$GB)
+
+rejects$good <- abs(rejects$GB - 1)
+```
+
+
+Verifying the Weights
+```{r}
+#goods are weighted by 30
+#take the population of bads and divide it by the population of goods times the weight given
+1500/(1500*30)
+1/0.0323
+#you get .0333--> 3.33%which is essentially the populations bad rate of 3.23%
+
+#could also take the population percentage of bad and put it under 1 to get what the actual weights should be which are 30.95975
+
+pop_g <- 0.9677
+pop_b <- 0.0323
+sam_g <- 1500
+sam_b <- 1500
+
+#verifying the initial weigths of 30 for the accepts dataset 
+Weight_Of_Good_AcceptsDF=(pop_g/pop_b)/(sam_g/sam_b)
+Weight_Of_Good_AcceptsDF
+```
+
+
+Adjusting the weights of Good to Bad for our Accepts and Rejects Data Set
+```{r}
+# rejects_scored$pred <- predict(initial_score, newdata=rejects_scored, type='response')
+# rejects$GB <- as.numeric(rejects_scored$pred > 0.0617)
+# rejects$good <- abs(rejects$GB - 1)
+
+pop_g <- 0.9677
+pop_b <- 0.0323
+
+sam_g <- 1500
+sam_b <- 1500
+
+pop_sam_gb_ratio <- (pop_g/pop_b)/(sam_g/sam_b)
+
+pop_a <- 0.75
+pop_r <- 0.25
+
+sam_a <- 3000
+sam_r <- 1500
+
+pop_sam_ar_ratio <- (pop_a/pop_r)/(sam_a/sam_r)
+
+weight_rb <- 1
+weight_rg <- pop_sam_gb_ratio
+
+weight_ab <- pop_sam_ar_ratio
+weight_ag <- pop_sam_ar_ratio*pop_sam_gb_ratio
+
+accepts$weight_ar <- ifelse(accepts$GB == 1, weight_ab, weight_ag)
+rejects$weight_ar <- ifelse(rejects$GB == 1, weight_rb, weight_rg)
+
+
+comb_parc <- rbind(accepts[, !(names(accepts) == '_freq_')], rejects) # New Combined Data Set #
+```
+
+```{r}
+comb <- comb_parc # Select which data set you want to use from above techniques #
+
+set.seed(0119)
+train_id <- sample(seq_len(nrow(comb)), size = floor(0.70*nrow(comb)))
+
+train_comb <- comb[train_id, ]
+test_comb <- comb[-train_id, ]
+
+iv_summary_comb <- smbinning.sumiv(df = train_comb, y = "good")
+
+iv_summary_comb= na.omit(iv_summary_comb)
+smbinning.sumiv.plot(iv_summary_comb)
+iv_summary_comb
+
+
+imp_vars_comb=NULL
+for (i in 1:length(iv_summary_comb$Char)){
+  if (iv_summary_comb$IV[i]>=.10){
+    imp_vars_comb=append(imp_vars_comb, iv_summary_comb$Char[i])
+  }
+}
+
+
+#just using train 0 to just get the important vars names  
+train_comb0=train_comb[,c(imp_vars_comb)]
+
+num_names_comb0 = names(train_comb0)[sapply(train_comb0, is.numeric)] # Gathering the names of numeric variables in data #
+
+results_all_sig_comb_num = list() 
+results_all_sig_comb_char = list()
+
+for(i in 1:length(num_names_comb0)){
+  results_all_sig_comb_num[[num_names_comb0[i]]] <- smbinning(df = train_comb, y = "good", x = num_names_comb0[i])
+}
+
+
+char_names_comb0 =names(train_comb0)[sapply(train_comb0, is.factor)]
+
+for(i in 1:length(char_names_comb0)){
+  results_all_sig_comb_char[[char_names_comb0[i]]] <- smbinning.factor(df = train_comb, y = "good", x = char_names_comb0[i])
+}
+```
+
+```{r}
+# Generating Variables of Bins #
+for(i in 1:length(results_all_sig_comb_num)) {
+  train_comb <- smbinning.gen(df = train_comb, ivout = results_all_sig_comb_num[[i]], 
+                         chrname = paste(results_all_sig_comb_num[[i]]$x, "_bin", sep = ""))
+}
+
+
+for(i in 1:length(results_all_sig_comb_char)) {
+  train_comb <- smbinning.factor.gen(df = train_comb, ivout = results_all_sig_comb_char[[i]], 
+                                     chrname = paste(results_all_sig_comb_char[[i]]$x, "_bin", sep = ""))
+}
+
+# Generating Variables WOE Values from Bins just created #
+
+results_all_sig_comb=append(results_all_sig_comb_num,results_all_sig_comb_char)
+
+for (j in 1:length(results_all_sig_comb)) {
+  for (i in 1:nrow(train_comb)) {
+    bin_name <- paste(results_all_sig_comb[[j]]$x, "_bin", sep = "")
+    bin <- substr(train_comb[[bin_name]][i], 2, 2)
+
+    woe_name <- paste(results_all_sig_comb[[j]]$x, "_WOE", sep = "")
+    
+    if(bin == 0) {
+      bin <- dim(results_all_sig_comb[[j]]$ivtable)[1] - 1
+      train_comb[[woe_name]][i] <- results_all_sig_comb[[j]]$ivtable[bin, "WoE"]
+    } else {
+      train_comb[[woe_name]][i] <- results_all_sig_comb[[j]]$ivtable[bin, "WoE"]
+    }
+  }
+}
+
+```
+
+Building Model ON Combined Data
+```{r}
+test_comb$GB=ifelse(test_comb$GB=="0",0,1)
+train_comb$GB=ifelse(train_comb$GB=="0",0,1)
+
+#watch out for quasi complete sep in the categorical vars--might need to combine levels
+final_score <- glm(GB ~ 
+                       TMJOB1_WOE + 
+                       INCOME_WOE +
+                       CARDS_WOE + 
+                       PERS_H_WOE, 
+                       #EC_CARD_WOE, #dogwater predictor
+                     data = train_comb,
+                     weights = as.numeric(train_comb$weight_ar), 
+                     family = "binomial")
+
+summary(final_score)
+
+```
+
+```{r}
+train
+```
+
+
+```{r}
+train_comb$pred <- final_score$fitted.values
+
+smbinning.metrics(dataset = train_comb, prediction = "pred", actualclass = "GB", report = 1)
+smbinning.metrics(dataset = train_comb, prediction = "pred", actualclass = "GB", report = 0, plot = "ks")
+smbinning.metrics(dataset = train_comb, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
+```
+checking model on our combined test data
+```{r}
+for(i in 1:length(results_all_sig_comb_num)) {
+  test_comb <- smbinning.gen(df = test_comb, ivout = results_all_sig_comb_num[[i]], 
+                             chrname = paste(results_all_sig_comb_num[[i]]$x, "_bin", sep = ""))
+}
+
+for(i in 1:length(results_all_sig_comb_char)) {
+  test_comb <- smbinning.factor.gen(df = test_comb, ivout = results_all_sig_comb_char[[i]], 
+                                    chrname = paste(results_all_sig_comb_char[[i]]$x, "_bin", sep = ""))
+}
+
+
+for (j in 1:length(results_all_sig_comb)) {
+  for (i in 1:nrow(test_comb)) {
+    bin_name <- paste(results_all_sig_comb[[j]]$x, "_bin", sep = "")
+    bin <- substr(test_comb[[bin_name]][i], 2, 2)
+    
+    woe_name <- paste(results_all_sig_comb[[j]]$x, "_WOE", sep = "")
+    
+    if(bin == 0) {
+      bin <- dim(results_all_sig_comb[[j]]$ivtable)[1] - 1
+      test_comb[[woe_name]][i] <- results_all_sig_comb[[j]]$ivtable[bin, "WoE"]
+    } else {
+      test_comb[[woe_name]][i] <- results_all_sig_comb[[j]]$ivtable[bin, "WoE"]
+    }
+  }
+}
+
+test_comb$pred <- predict(final_score, newdata=test_comb, type='response')
+
+smbinning.metrics(dataset = test_comb, prediction = "pred", actualclass = "GB", report = 1)
+smbinning.metrics(dataset = test_comb, prediction = "pred", actualclass = "GB", report = 0, plot = "ks")
+smbinning.metrics(dataset = test_comb, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
+```
+
+# Add Scores to Train Comb from Final Model #
+Our Points should almost double from our original model since we are weighting the good in the accepts as around 46 (about an aditional half of their original score) whereas in just the accepts we are weighting them as 30, we are also weighting the bads in the accepts as 1.5 also an additional half of their original score and giving just the rejects a weight of 1 this should ultimately cause the coefficients of our WoE vars to increase in our final model in comparison to our initial model resulting in almost doubling the points individuals get for each bin they fall in. 
+```{r}
+# Add Scores to Initial Model #
+pdo_f <- 50
+score_f <- 500
+odds_f <- 20
+fact_f <- pdo_f/log(2)
+os_f <- score_f - fact_f*log(odds_f)
+var_names_f <- names(final_score$coefficients[-1])
+
+for(i in var_names_f) {
+  beta_f <- final_score$coefficients[i]
+  beta0_f <- final_score$coefficients["(Intercept)"]
+  nvar_f <- length(var_names_f)
+  WOE_var_f <- train_comb[[i]]
+  points_name_f <- paste(str_sub(i, end = -4), "points", sep="")
+
+  train_comb[[points_name_f]] <- -(WOE_var_f*(beta_f) + (beta0_f/nvar_f))*fact_f + os_f/nvar_f
+}
+
+
+colini_f <- (ncol(train_comb)-nvar_f + 1)
+colend_f <- ncol(train_comb)
+train_comb$Score <- rowSums(train_comb[, colini_f:colend_f])
+
+hist(train_comb$Score, breaks = 50, xlim = c(350,700), main = "Distribution of Train Combined Scores", xlab = "Score")
+
+```
+
+# Add Scores to Test Comb from Final Model #
+```{r}
+#using the same initial values as above
+pdo_f <- 50
+score_f <- 500
+odds_f <- 20
+fact_f <- pdo_f/log(2)
+os_f <- score_f - fact_f*log(odds_f)
+var_names_f <- names(final_score$coefficients[-1])
+
+for(i in var_names) {
+  beta_f <- final_score$coefficients[i]
+  beta0_f <- final_score$coefficients["(Intercept)"]
+  nvar_f <- length(var_names_f)
+  WOE_var_f <- test_comb[[i]]
+  points_name_f <- paste(str_sub(i, end = -4), "points", sep="")
+  
+  test_comb[[points_name_f]] <- -(WOE_var_f*(beta_f) + (beta0_f/nvar_f))*fact_f + os_f/nvar_f
+}
+
+colini_f <- (ncol(test_comb)-nvar_f + 1)
+colend_f <- ncol(test_comb)
+test_comb$Score <- rowSums(test_comb[, colini_f:colend_f])
+
+hist(test_comb$Score, breaks = 50, main = "Distribution of Test Comb Scores", xlab = "Score")
+```
+
+```{r}
+scored_comb <- rbind(train_comb, test_comb)
+hist(scored_comb$Score, breaks = 50, main = "Distribution of Scores", xlab = "Score")
+```
+
+DECILE PLOT
+```{r}
+accepts_scored_comb=scored_comb
+cutpoints <- quantile(accepts_scored_comb$Score, probs = seq(0,1,0.10))
+accepts_scored_comb$Score.QBin <- cut(accepts_scored_comb$Score, breaks=cutpoints, include.lowest=TRUE)
+Default.QBin.pop <- round(table(accepts_scored_comb$Score.QBin, accepts_scored_comb$GB)[,2]/(table(accepts_scored_comb$Score.QBin, accepts_scored_comb$GB)[,2] + table(accepts_scored_comb$Score.QBin, accepts_scored_comb$GB)[,1]*30.95975)*100,2)
+
+print(Default.QBin.pop)
+
+barplot(Default.QBin.pop, 
+        main = "Default Decile Plot", 
+        xlab = "Deciles of Scorecard",
+        ylab = "Default Rate (%)",
+        col = saturation(heat.colors, scalefac(0.8))(10))
+abline(h = 3.23, lwd = 2, lty = "dashed")
+text(11.5, 5, "Current = 3.23%")
+```
+
+Plotting Default, Acceptance, & Profit By Score
+```{r}
+# Plotting Default, Acceptance, & Profit By Score #
+def <- NULL
+acc <- NULL
+prof <- NULL
+score <- NULL
+
+cost <- 52000
+profit <- 2000
+for(i in min(floor(train_comb$Score)):max(floor(train_comb$Score))){
+  score[i - min(floor(train_comb$Score)) + 1] <- i
+  def[i - min(floor(train_comb$Score)) + 1] <- 
+    100*sum(train_comb$GB[which(train_comb$Score >= i)])/(length(train_comb$GB[which(train_comb$Score >= i & train_comb$GB == 1)]) +
+                                                            30.95975*length(train_comb$GB[which(train_comb$Score >= i & train_comb$GB == 0)]))
+  acc[i - min(floor(train_comb$Score)) + 1] <- 
+    100*(length(train_comb$GB[which(train_comb$Score >= i & 
+                                      train_comb$GB == 1)]) + 30.95975*length(train_comb$GB[which(train_comb$Score >= i & 
+                                             train_comb$GB == 0)]))/(length(train_comb$GB[which(train_comb$GB == 1)]) + 
+                                                                                             30.95975*length(train_comb$GB[which(train_comb$GB == 
+                                                                                                                               0)]))
+  prof[i - min(floor(train_comb$Score)) + 1] <- 
+    length(train_comb$GB[which(train_comb$Score >= i & 
+                                 train_comb$GB == 1)])*(-cost) + 30.95975*length(train_comb$GB[which(train_comb$Score >= i & 
+                                                                                                   train_comb$GB == 0)])*profit
+}
+
+plot_data <- data.frame(def, acc, prof, score)
+
+def_plot <- xyplot(def ~ score, plot_data, 
+                   type = "l" , lwd=2, col="red",
+                   ylab = "Default Rate (%)",
+                   xlab = "Score",
+                   main = "Default Rate by Acceptance Across Score",
+                   panel = function(x, y,...) {
+                     panel.xyplot(x, y, ...)
+                     panel.abline(h = 3.23, col = "red")
+                   })
+
+acc_plot <- xyplot(acc ~ score, plot_data, 
+                   type = "l", lwd=2, col="blue",
+                   ylab = "Acceptance Rate (%)",
+                   panel = function(x, y,...) {
+                     panel.xyplot(x, y, ...)
+                     panel.abline(h = 75, col = "blue")
+                   })
+
+prof_plot <- xyplot(prof/1000 ~ score, plot_data, 
+                    type = "l" , lwd=2, col="green",
+                    ylab = "Profit (Thousands $)",
+                    xlab = "Score",
+                    main = "Profit by Acceptance Across Score"
+)
+
+doubleYScale(def_plot, acc_plot, add.ylab2 = TRUE, use.style=FALSE)
+doubleYScale(prof_plot, acc_plot, add.ylab2 = TRUE, use.style=FALSE)
+```
+
+
+```{r}
+ay1 <- list(
+  title = "Default Rate (%)",
+  range = c(0, 10)
+)
+
+
+ay2 <- list(
+  tickfont = list(),
+  range = c(0, 100),
+  overlaying = "y",
+  side = "right",
+  title = "Acceptance Rate (%)"
+)
+
+
+fig <- plot_ly()
+fig <- fig %>% add_lines(x = ~score, y = ~def, name = "Default Rate (%)")
+fig <- fig %>% add_lines(x = ~score, y = ~acc, name = "Acceptance Rate (%)", yaxis = "y2")
+fig <- fig %>% layout(
+  title = "Default Rate by Acceptance Across Score", yaxis = ay1, yaxis2 = ay2,
+  xaxis = list(title="Scorecard Value"),
+  legend = list(x = 1.2, y = 0.8)
+)
+
+fig
+```
+
+
+```{r}
+ay1 <- list(
+  title = "Profit ($)",
+  showline = FALSE,
+  showgrid = FALSE
+)
+ay2 <- list(
+  tickfont = list(),
+  range = c(0, 100),
+  overlaying = "y",
+  side = "right",
+  title = "Acceptance Rate (%)"
+)
+fig <- plot_ly()
+fig <- fig %>% add_lines(x = ~score, y = ~prof, name = "Profit ($)")
+fig <- fig %>% add_lines(x = ~score, y = ~acc, name = "Acceptance Rate (%)", yaxis = "y2")
+fig <- fig %>% layout(
+  title = "Profit by Acceptance Across Score", yaxis = ay1, yaxis2 = ay2,
+  xaxis = list(title="Scorecard Value"),
+  legend = list(x = 1.2, y = 0.8)
+)
+
+fig
+```
+
+
+
 
