@@ -201,7 +201,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb79-22"><a href="add-scores-to-initial-model-on-training-data.html#cb79-22" tabindex="-1"></a>train<span class="sc">$</span>Score <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(train[, colini<span class="sc">:</span>colend])</span>
 <span id="cb79-23"><a href="add-scores-to-initial-model-on-training-data.html#cb79-23" tabindex="-1"></a></span>
 <span id="cb79-24"><a href="add-scores-to-initial-model-on-training-data.html#cb79-24" tabindex="-1"></a><span class="fu">hist</span>(train<span class="sc">$</span>Score, <span class="at">breaks =</span> <span class="dv">50</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">250</span>,<span class="dv">500</span>), <span class="at">main =</span> <span class="st">&quot;Distribution of Train Scores&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Score&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 <p>Scoring for the Test Data Set</p>
 <div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb80-1"><a href="add-scores-to-initial-model-on-training-data.html#cb80-1" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> var_names) {</span>
 <span id="cb80-2"><a href="add-scores-to-initial-model-on-training-data.html#cb80-2" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> initial_score<span class="sc">$</span>coefficients[i]</span>
@@ -218,11 +218,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb80-13"><a href="add-scores-to-initial-model-on-training-data.html#cb80-13" tabindex="-1"></a>test<span class="sc">$</span>Score <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(test[, colini<span class="sc">:</span>colend])</span>
 <span id="cb80-14"><a href="add-scores-to-initial-model-on-training-data.html#cb80-14" tabindex="-1"></a></span>
 <span id="cb80-15"><a href="add-scores-to-initial-model-on-training-data.html#cb80-15" tabindex="-1"></a><span class="fu">hist</span>(test<span class="sc">$</span>Score, <span class="at">breaks =</span> <span class="dv">30</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">250</span>,<span class="dv">480</span>), <span class="at">main =</span> <span class="st">&quot;Distribution of Test Scores&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Score&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
 <p>combining training and testing data back together</p>
 <div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb81-1"><a href="add-scores-to-initial-model-on-training-data.html#cb81-1" tabindex="-1"></a>accepts_scored <span class="ot">&lt;-</span> <span class="fu">rbind</span>(train, test)</span>
 <span id="cb81-2"><a href="add-scores-to-initial-model-on-training-data.html#cb81-2" tabindex="-1"></a><span class="fu">hist</span>(accepts_scored<span class="sc">$</span>Score, <span class="at">breaks =</span> <span class="dv">30</span>, <span class="at">main =</span> <span class="st">&quot;Distribution of Scores&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Score&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
 </div>
             </section>
 

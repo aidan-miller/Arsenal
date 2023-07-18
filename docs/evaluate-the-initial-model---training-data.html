@@ -213,9 +213,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 
 ##   Note: 0 rows deleted due to missing data.</code></pre>
 <div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="evaluate-the-initial-model---training-data.html#cb69-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> train, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;ks&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
 <div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="evaluate-the-initial-model---training-data.html#cb70-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> train, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;auc&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-20-2.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
 <p>Fixing PERS_H Var</p>
 <div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="evaluate-the-initial-model---training-data.html#cb71-1" tabindex="-1"></a><span class="co">#test PERS_H is missing an 8+ Category so we are gonna combine 7 and 8+</span></span>
 <span id="cb71-2"><a href="evaluate-the-initial-model---training-data.html#cb71-2" tabindex="-1"></a><span class="co">#test PERS_H is missing an 8+ Category</span></span>
@@ -290,9 +290,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 
 ##   Note: 0 rows deleted due to missing data.</code></pre>
 <div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb77-1"><a href="evaluate-the-initial-model---training-data.html#cb77-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> test, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;ks&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 <div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb78-1"><a href="evaluate-the-initial-model---training-data.html#cb78-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> test, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;auc&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-22-2.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-17-2.png" width="672" /></p>
 </div>
             </section>
 

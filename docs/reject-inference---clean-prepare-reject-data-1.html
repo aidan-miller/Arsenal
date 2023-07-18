@@ -463,7 +463,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## </code></pre>
 <div class="sourceCode" id="cb129"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb129-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb129-1" tabindex="-1"></a>iv_summary_comb<span class="ot">=</span> <span class="fu">na.omit</span>(iv_summary_comb)</span>
 <span id="cb129-2"><a href="reject-inference---clean-prepare-reject-data-1.html#cb129-2" tabindex="-1"></a><span class="fu">smbinning.sumiv.plot</span>(iv_summary_comb)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
 <div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb130-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb130-1" tabindex="-1"></a>iv_summary_comb</span></code></pre></div>
 <pre><code>##        Char     IV            Process
 ## 8    INCOME 0.2471 Numeric binning OK
@@ -729,9 +729,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 
 ##   Note: 0 rows deleted due to missing data.</code></pre>
 <div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb145-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb145-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> train_comb, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;ks&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
 <div class="sourceCode" id="cb146"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb146-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb146-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> train_comb, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;auc&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-37-2.png" width="672" />
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-32-2.png" width="672" />
 checking model on our combined test data</p>
 <div class="sourceCode" id="cb147"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb147-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb147-1" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(results_all_sig_comb_num)) {</span>
 <span id="cb147-2"><a href="reject-inference---clean-prepare-reject-data-1.html#cb147-2" tabindex="-1"></a>  test_comb <span class="ot">&lt;-</span> <span class="fu">smbinning.gen</span>(<span class="at">df =</span> test_comb, <span class="at">ivout =</span> results_all_sig_comb_num[[i]], </span>
@@ -796,9 +796,9 @@ checking model on our combined test data</p>
 ## 
 ##   Note: 0 rows deleted due to missing data.</code></pre>
 <div class="sourceCode" id="cb149"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb149-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb149-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> test_comb, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;ks&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-38-1.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
 <div class="sourceCode" id="cb150"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb150-1"><a href="reject-inference---clean-prepare-reject-data-1.html#cb150-1" tabindex="-1"></a><span class="fu">smbinning.metrics</span>(<span class="at">dataset =</span> test_comb, <span class="at">prediction =</span> <span class="st">&quot;pred&quot;</span>, <span class="at">actualclass =</span> <span class="st">&quot;GB&quot;</span>, <span class="at">report =</span> <span class="dv">0</span>, <span class="at">plot =</span> <span class="st">&quot;auc&quot;</span>)</span></code></pre></div>
-<p><img src="bookdownproj_files/figure-html/unnamed-chunk-38-2.png" width="672" /></p>
+<p><img src="bookdownproj_files/figure-html/unnamed-chunk-33-2.png" width="672" /></p>
 </div>
             </section>
 
