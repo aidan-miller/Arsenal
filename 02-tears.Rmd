@@ -1,6 +1,6 @@
 # Financial Score Card Model
 
-
+## Data Preprocessing
 Loading in Packages
 ```{r warning=F, message=FALSE, include=FALSE}
 
@@ -105,8 +105,6 @@ table(test$good)
 
 
 
-*******************************************************************
-*******************************************************************
 Selecting + Binning Just the Important Vars
 ```{r}
 #Selecting only important vars
@@ -149,8 +147,6 @@ for(i in 1:length(char_names0)){
 
 
 ```
-*******************************************************************
-*******************************************************************
 
 
 
@@ -227,7 +223,7 @@ results_all_sig[["PERS_H"]][["ivtable"]]
 ```
 
 
-
+## Initial Model Build
 Building Initial Scorecard Model
 ```{r}
 #need to fix gb var in test
@@ -246,7 +242,7 @@ initial_score <- glm(GB ~
 summary(initial_score)
 ```
 
-# Evaluate the Initial Model - Training Data #
+ Evaluate the Initial Model - Training Data 
 ```{r}
 train$pred <- initial_score$fitted.values
 
@@ -255,7 +251,7 @@ smbinning.metrics(dataset = train, prediction = "pred", actualclass = "GB", repo
 smbinning.metrics(dataset = train, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
 ```
 
-Fixing PERS_H Var
+Fixing PERS_H Variable
 ```{r}
 #test PERS_H is missing an 8+ Category so we are gonna combine 7 and 8+
 #test PERS_H is missing an 8+ Category
@@ -299,7 +295,7 @@ smbinning.metrics(dataset = test, prediction = "pred", actualclass = "GB", repor
 smbinning.metrics(dataset = test, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
 ```
 
-# Add Scores to Initial Model on Training Data #
+Add Scores to Initial Model on Training Data 
 ```{r}
 # Add Scores to Initial Model #
 pdo <- 50
@@ -346,14 +342,14 @@ test$Score <- rowSums(test[, colini:colend])
 hist(test$Score, breaks = 30, xlim = c(250,480), main = "Distribution of Test Scores", xlab = "Score")
 ```
 
-combining training and testing data back together
+combining training and testing data back together and looking at histogram of result
 ```{r}
 accepts_scored <- rbind(train, test)
 hist(accepts_scored$Score, breaks = 30, main = "Distribution of Scores", xlab = "Score")
 ```
 
 
-# Reject Inference - Clean & Prepare Reject Data #
+## Reject Inference - Clean & Prepare Reject Data 
 ```{r}
 #need to make sure our levels match the accepts data exactly or we wont be able to bin properly 
 rejects= rejected %>% 
@@ -362,7 +358,8 @@ rejects= rejected %>%
          CARDS= ifelse(CARDS=='VISA mybank', 'Other credit car', CARDS),
          CARDS= ifelse(CARDS=='VISA Others', 'Other credit car', CARDS),
          CARDS= ifelse(CARDS=='American Express', 'Other credit car', CARDS),
-         CARDS= ifelse(CARDS=='VISA Citibank', 'Other credit car', CARDS)) #citibank in rejects and not accepts and need to get it to match
+          # citibank in rejects and not accepts and need to get it to match
+         CARDS= ifelse(CARDS=='VISA Citibank', 'Other credit car', CARDS))
 
 
 
@@ -380,7 +377,7 @@ rejects[,i]=as.factor(rejects[,i])
 ```
 
 
-# Reject Inference - Clean & Prepare Reject Data #
+Reject Inference - Clean & Prepare Reject Data 
 ```{r}
 #altering the bands for each binning set in the results list in case there are any additional lower points or higher points in the rejects data
 #this is mostly for the numeric values 
@@ -417,7 +414,8 @@ results_all_sig_AR=append(results_all_sig_num,results_all_sig_char)
 
 
 Getting the WoE values for our Rejects Bins we Just Created
-  -This wont work if the levels of the categories are not the same across the rejects and accepts data for the significant categorical vars in     the results list
+  -This wont work if the levels of the categories are not the same across the rejects 
+    and accepts data for the significant categorical vars in the results list
   -This also wont work if our bands for the numeric sig vars are not altered to account for both the accepts and the rejects
 ```{r}
 for (j in 1:length(results_all_sig_AR)) {
@@ -439,7 +437,7 @@ for (j in 1:length(results_all_sig_AR)) {
 head(rejects_scored)
 ```
 
-#getting the scores for rejects data from our initial model we made
+Scoring the Rejects Data Using our initial model we made
 ```{r}
 pdo <- 50
 score <- 500
@@ -496,6 +494,7 @@ rejects$good <- abs(rejects$GB - 1)
 ```
 
 
+## Data Prep For Final Model
 Verifying the Weights
 ```{r}
 #goods are weighted by 30
@@ -631,7 +630,7 @@ for (j in 1:length(results_all_sig_comb)) {
 
 ```
 
-Building Model ON Combined Data
+## Building Model On Combined Data
 ```{r}
 test_comb$GB=ifelse(test_comb$GB=="0",0,1)
 train_comb$GB=ifelse(train_comb$GB=="0",0,1)
@@ -699,7 +698,7 @@ smbinning.metrics(dataset = test_comb, prediction = "pred", actualclass = "GB", 
 smbinning.metrics(dataset = test_comb, prediction = "pred", actualclass = "GB", report = 0, plot = "auc")
 ```
 
-# Add Scores to Train Comb from Final Model #
+## Adding Scores to Train Comb from Final Model 
 Our Points should almost double from our original model since we are weighting the good in the accepts as around 46 (about an aditional half of their original score) whereas in just the accepts we are weighting them as 30, we are also weighting the bads in the accepts as 1.5 also an additional half of their original score and giving just the rejects a weight of 1 this should ultimately cause the coefficients of our WoE vars to increase in our final model in comparison to our initial model resulting in almost doubling the points individuals get for each bin they fall in. 
 ```{r}
 # Add Scores to Initial Model #
@@ -729,7 +728,7 @@ hist(train_comb$Score, breaks = 50, xlim = c(350,700), main = "Distribution of T
 
 ```
 
-# Add Scores to Test Comb from Final Model #
+## Add Scores to Test Comb from Final Model 
 ```{r}
 #using the same initial values as above
 pdo_f <- 50
@@ -761,6 +760,8 @@ scored_comb <- rbind(train_comb, test_comb)
 hist(scored_comb$Score, breaks = 50, main = "Distribution of Scores", xlab = "Score")
 ```
 
+
+## Plots
 DECILE PLOT
 ```{r}
 accepts_scored_comb=scored_comb

@@ -5,5 +5,12 @@ date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 ---
 
-# The Arsenal Repository
+# Intro to the Arsenal Repository
+
+## Welcome 
+This is an Arsenal of some of the more interesting projects I have worked on. 
+
+## Chapter 2- Project Intro
+My first project in Chapter 2 is a financial credit model. This model goes through the entire model development lifecycle starting with data exploration, then moving into data preprocessing, then variable selection and finally model building and tuning. This credit scoring model first begins with a supervised glm on our accepts data, then we apply that model to our rejects data to generate a score so we can use the rejects data in training a model. Finally, we build and tune our final model on both the accepts and rejects data to get a model that emcompasses both accepts and rejects data. 
+
 
